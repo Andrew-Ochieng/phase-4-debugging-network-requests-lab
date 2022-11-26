@@ -62,12 +62,40 @@ developing your own process.
 
 - Add a new toy when the toy form is submitted
 
-  - How I debugged:
+  - How I debugged: 
+  1. First, I got error **500 (Internal server error)** which served as a clue to look
+  at the server side, especially the logs section
+
+  2. I also checked the last error and found "NameError (uninitialized constant ToysController::Toys):".
+  With I knew just where to look at - which turned out to be the controller folder, and specifically the toys_controller.rb file
+  to see where the class "Toys" has been used prior to being defined. My focus was especially on the action
+  under the "create" method, since that is where our post request is routed.
+
+  3. I found the toy object had been created using `toy = Toys.create(toy_params)`. There was an error as
+  "Toys" class was didn't exist as used, instead it should have been "Toy" as per the ActiveRecords naming convention.
+
+  4. Upon making the changes from "Toys" with "Toy" in that statement, it worked :)
 
 - Update the number of likes for a toy
 
-  - How I debugged:
+  - How I debugged: 
+   1. I got the error **Uncaught (in promise) SyntaxError: Unexpected end of JSON input** when I tried liking a toy. Definately, 
+  I knew that whatever I was getting back was not valid JSON.
+
+  2. Since I do expect to get a JSON from the database, I had to check the update method in the controllers - since this is a patch request, to see what was being returned
+
+  3. I found the last statement in the update action to be `toy.update(toy_params)`, which is a statement that returns a
+  Toy instance object without serializing it to JSON.
+
+  4. I added the statement `render json:` to the initial one `toy.update(toy_params)` to make it read `render json: toy.update(toy_params)`, which inturn would make it return a JSON object to the front-end. And woolaa! It worked perfectly well :)
 
 - Donate a toy to Goodwill (and delete it from our database)
 
-  - How I debugged:
+  - How I debugged: 
+  1. When I tried to "donate a toy to goodwill", I got the error; **404 (Not Found)** with an implication of the object's route. With this, I knew that the routing implementation to handle the delete request wasn't right somewhere, 
+
+  2. Since the frontend is all good, I had to check the back-end, and especially the routes
+  
+  3. I found that even though the destroy action was defined in the controllers, the route that would route delete request
+  to it was not defined, so I added it to the list of actions the back-end was expected to handle. The line changed from
+  `resources :toys, only: [:index, :create, :update]` to `resources :toys, only: [:index, :create, :update, :destroy]`
